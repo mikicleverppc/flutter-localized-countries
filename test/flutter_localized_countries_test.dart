@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_localized_countries/flutter_localized_countries.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as path;
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -11,8 +11,9 @@ class TestAssetBundle extends CachingAssetBundle {
   Future<ByteData> load(String key) async {
     const prefix = "packages/flutter_localized_countries/";
     if (key.startsWith(prefix)) {
-      var path = join(dirname(Platform.script.toFilePath()), key.substring(prefix.length));
-      var bytes = Uint8List.fromList(await File(path).readAsBytes());
+      var fullPath = path.join(path.dirname(Platform.script.toFilePath()),
+          key.substring(prefix.length));
+      var bytes = Uint8List.fromList(await File(fullPath).readAsBytes());
       var buffer = bytes.buffer;
       return ByteData.view(buffer);
     }
@@ -29,8 +30,8 @@ void countryTests() {
   final bundle = TestAssetBundle();
 
   var countryDelegate = CountryNamesLocalizationsDelegate(bundle: bundle);
-  test('Country delegate provides list of locales()', () {
-    expect(countryDelegate.locales(), completion(isNotEmpty));
+  test('Country delegate provides list of locale codes()', () {
+    expect(countryDelegate.codes(), completion(isNotEmpty));
   });
 
   void checkCountryTranslation(Locale locale, String cc, String name) {
@@ -78,8 +79,12 @@ void localeTests() {
   final bundle = TestAssetBundle();
 
   var localeDelegate = LocaleNamesLocalizationsDelegate(bundle: bundle);
-  test('Locale delegate provides list of locales()', () {
-    expect(localeDelegate.locales(), completion(isNotEmpty));
+  test('Locale delegate provides list of locale codes', () {
+    expect(localeDelegate.codes(), completion(isNotEmpty));
+  });
+
+  test('Locale delegate provides map of native locale names', () {
+    expect(localeDelegate.getLocaleNativeNames(), completion(isNotEmpty));
   });
 
   void checkLocaleTranslation(Locale locale, String cc, String name) {
@@ -98,13 +103,21 @@ void localeTests() {
   test('localizes locale by language and country', () {
     checkLocaleTranslation(Locale('de', 'CH'), 'be', 'Weissrussisch');
     checkLocaleTranslation(Locale('de', 'AT'), 'be', 'Weißrussisch');
-    checkLocaleTranslation(Locale('de', 'CH'), 'en_GB', 'Englisch (Grossbritannien)');
-    checkLocaleTranslation(Locale('de'), 'en_GB', 'Englisch (Vereinigtes Königreich)');
+    checkLocaleTranslation(
+        Locale('de', 'CH'), 'en_GB', 'Englisch (Grossbritannien)');
+    checkLocaleTranslation(
+        Locale('de'), 'en_GB', 'Englisch (Vereinigtes Königreich)');
+    checkLocaleTranslation(
+        Locale('de', 'CH'), 'en_GB', 'Englisch (Grossbritannien)');
+    checkLocaleTranslation(
+        Locale('de'), 'en_GB', 'Englisch (Vereinigtes Königreich)');
   });
   test('invalid locale gives null', () {
     checkLocaleTranslation(Locale('de'), 'zz', null);
   });
-  test('localized locale falls back to language when given invalid country for locale', () {
+  test(
+      'localized locale falls back to language when given invalid country for locale',
+      () {
     checkLocaleTranslation(
         Locale('de', 'UK'), 'es_AR', 'Spanisch (Argentinien)');
   });
