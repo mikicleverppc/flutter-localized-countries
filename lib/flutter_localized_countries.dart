@@ -89,10 +89,11 @@ abstract class _BaseNamesLocalizationsDelegate<T> extends LocalizationsDelegate<
     );
   }
 
-  Future<dynamic> _loadJSON(key) {
-    Future<dynamic> parser(String data) async => jsonDecode(data);
-    final bundle = this.bundle ?? rootBundle;
-    return bundle.loadStructuredData('packages/flutter_localized_countries/' + key, parser);
+  // Fix found here: https://github.com/flutter/flutter/issues/44182
+  Future<dynamic> _loadJSON(key) async {
+    ByteData data = await rootBundle.load('packages/flutter_localized_countries/' + key);
+    String jsonContent = utf8.decode(data.buffer.asUint8List());
+    return json.decode(jsonContent);
   }
 }
 
